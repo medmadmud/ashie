@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>For Ashie 🩵</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue: #a8c8e8;
+    --blue-dark: #5a8fb5;
+    --blue-soft: #d6eaf8;
+    --cream: #faf8f5;
+    --ink: #1c1c2e;
+    --soft: #8090a8;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); overflow-x: hidden; }
+
+  #quiz-gate {
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #0d1b2e 0%, #1a2d4a 50%, #0d1b2e 100%);
+    padding: 2rem; position: relative; overflow: hidden;
+  }
+  #quiz-gate::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse 60% 40% at 50% 50%, rgba(90,143,181,0.15) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .stars { position: absolute; inset: 0; pointer-events: none; }
+  .star {
+    position: absolute; width: 2px; height: 2px;
+    background: white; border-radius: 50%;
+    animation: twinkle var(--d, 3s) var(--delay, 0s) infinite;
+    opacity: var(--op, 0.6);
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: var(--op, 0.6); transform: scale(1); }
+    50% { opacity: 0.1; transform: scale(0.5); }
+  }
+  .quiz-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(168,200,232,0.2);
+    border-radius: 24px; padding: 3rem 2.5rem;
+    max-width: 560px; width: 100%;
+    backdrop-filter: blur(20px);
+    position: relative; z-index: 10;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.4);
+  }
+  .quiz-header { text-align: center; margin-bottom: 2.5rem; }
+  .quiz-header .lock-icon { font-size: 2.5rem; margin-bottom: 1rem; display: block; animation: float 3s ease-in-out infinite; }
+  @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+  .quiz-header h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2rem; font-weight: 300; color: var(--blue);
+    letter-spacing: 0.02em; margin-bottom: 0.5rem;
+  }
+  .quiz-header p { color: rgba(168,200,232,0.6); font-size: 0.85rem; font-weight: 300; }
+  .progress-bar {
+    width: 100%; height: 2px;
+    background: rgba(168,200,232,0.15); border-radius: 2px;
+    margin-bottom: 2rem; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--blue-dark), var(--blue));
+    border-radius: 2px; transition: width 0.5s ease;
+  }
+  .question-counter {
+    font-size: 0.75rem; color: rgba(168,200,232,0.5);
+    text-align: right; margin-bottom: 0.75rem;
+    letter-spacing: 0.05em; text-transform: uppercase;
+  }
+  .question-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.35rem; font-weight: 400; color: white;
+    line-height: 1.5; margin-bottom: 1.75rem; font-style: italic;
+  }
+  .choices { display: flex; flex-direction: column; gap: 0.6rem; }
+  .choice-btn {
+    width: 100%; background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(168,200,232,0.15); border-radius: 12px;
+    padding: 0.75rem 1.1rem; color: rgba(255,255,255,0.8);
+    font-family: 'DM Sans', sans-serif; font-size: 0.9rem;
+    cursor: pointer; text-align: left; transition: all 0.2s;
+  }
+  .choice-btn:hover:not(:disabled) {
+    background: rgba(168,200,232,0.12);
+    border-color: rgba(168,200,232,0.3); color: white;
+    transform: translateX(4px);
+  }
+  .choice-btn:disabled { cursor: not-allowed; }
+  .choice-btn.correct { background: rgba(80,180,120,0.2); border-color: rgba(80,180,120,0.5); color: #8dbf9e; }
+  .choice-btn.wrong-pick { background: rgba(220,80,80,0.2); border-color: rgba(220,80,80,0.4); color: #e88; }
+  .feedback {
+    margin-top: 1rem; padding: 0.75rem 1rem; border-radius: 10px;
+    font-size: 0.875rem; text-align: center; display: none;
+    animation: fadeIn 0.3s ease;
+  }
+  .feedback.wrong { background: rgba(220,80,80,0.12); border: 1px solid rgba(220,80,80,0.25); color: #e88; display: block; }
+  .feedback.correct { background: rgba(80,180,120,0.12); border: 1px solid rgba(80,180,120,0.25); color: #8dbf9e; display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* MAIN SITE */
+  #main-site { display: none; opacity: 0; transition: opacity 0.8s ease; }
+  #main-site.visible { display: block; opacity: 1; }
+
+  .hero {
+    min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center; padding: 3rem 2rem;
+    background: linear-gradient(180deg, #0d1b2e 0%, #1a2d4a 40%, var(--cream) 100%);
+    position: relative; overflow: hidden;
+  }
+  .hero-stars { position: absolute; inset: 0; pointer-events: none; opacity: 0.6; }
+  .petals { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  .petal {
+    position: absolute; font-size: var(--size, 1rem);
+    opacity: 0; animation: fall var(--dur, 8s) var(--delay, 0s) infinite linear;
+    top: -50px; left: var(--left, 50%);
+  }
+  @keyframes fall {
+    0% { opacity: 0; transform: translateY(-60px) rotate(0deg); }
+    10% { opacity: 0.7; } 90% { opacity: 0.3; }
+    100% { opacity: 0; transform: translateY(110vh) rotate(720deg); }
+  }
+  .hero-content { position: relative; z-index: 5; }
+  .arabic-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1.5rem, 5vw, 2.5rem); color: var(--blue);
+    letter-spacing: 0.08em; margin-bottom: 0.5rem; font-style: italic;
+    animation: slideDown 1s ease 0.3s both;
+  }
+  .hero h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(3rem, 10vw, 6.5rem); font-weight: 300; color: white;
+    line-height: 1; letter-spacing: -0.02em; margin-bottom: 0.25rem;
+    animation: slideDown 1s ease 0.5s both;
+  }
+  .hero-sub {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1.1rem, 3vw, 1.4rem); color: rgba(168,200,232,0.7);
+    font-style: italic; margin-bottom: 3rem; animation: slideDown 1s ease 0.7s both;
+  }
+  @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+  .scroll-hint {
+    position: absolute; bottom: 2.5rem; left: 50%; transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+    color: rgba(168,200,232,0.4); font-size: 0.75rem;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    animation: bounce 2s ease-in-out infinite;
+  }
+  @keyframes bounce { 0%, 100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(6px); } }
+
+  .cat-section {
+    background: var(--cream); padding: 5rem 2rem;
+    text-align: center; position: relative; overflow: hidden;
+  }
+  .section-tag {
+    display: inline-block; font-size: 0.7rem;
+    letter-spacing: 0.15em; text-transform: uppercase; color: var(--blue-dark);
+    background: rgba(90,143,181,0.1); padding: 0.3rem 0.9rem;
+    border-radius: 100px; margin-bottom: 1.5rem;
+    border: 1px solid rgba(90,143,181,0.2);
+  }
+  .cat-frame { display: inline-block; position: relative; margin: 2rem 0; }
+  .cat-frame img {
+    width: min(320px, 85vw); border-radius: 24px; display: block;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+  }
+  .cat-frame::before {
+    content: ''; position: absolute; inset: -6px; border-radius: 28px;
+    background: linear-gradient(135deg, var(--blue-dark), var(--blue-soft), var(--blue-dark));
+    z-index: -1; opacity: 0.5;
+  }
+
+  .letter-section { background: white; padding: 5rem 2rem; position: relative; }
+  .letter-container { max-width: 680px; margin: 0 auto; }
+  .letter-paper {
+    background: #fffdf9; border: 1px solid rgba(168,200,232,0.25);
+    border-radius: 24px; padding: clamp(2rem, 6vw, 4rem);
+    position: relative; box-shadow: 0 4px 40px rgba(0,0,0,0.06);
+  }
+  .letter-paper::after {
+    content: ''; position: absolute; inset: 12px;
+    border: 1px dashed rgba(168,200,232,0.15); border-radius: 18px; pointer-events: none;
+  }
+  .letter-date { font-size: 0.8rem; color: var(--soft); letter-spacing: 0.05em; margin-bottom: 1.5rem; }
+  .letter-paper p {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1.1rem, 2.5vw, 1.25rem); line-height: 1.9; color: #2a2a3e;
+  }
+  .letter-sig { margin-top: 2rem; font-family: 'Cormorant Garamond', serif; font-style: italic; color: var(--blue-dark); font-size: 1.1rem; }
+  .hearts-line { color: var(--blue); letter-spacing: 0.2em; font-style: normal; display: block; margin-top: 0.5rem; }
+
+  .loves-section { background: linear-gradient(180deg, var(--cream) 0%, #e8f4fb 100%); padding: 5rem 2rem; }
+  .loves-container { max-width: 680px; margin: 0 auto; }
+  .section-header { text-align: center; margin-bottom: 3rem; }
+  .section-header h2 { font-family: 'Cormorant Garamond', serif; font-size: clamp(2rem, 6vw, 3rem); font-weight: 300; color: var(--ink); line-height: 1.1; margin-bottom: 0.5rem; }
+  .section-header p { color: var(--soft); font-size: 0.9rem; }
+  .love-items { display: flex; flex-direction: column; gap: 1rem; }
+  .love-item {
+    display: flex; align-items: flex-start; gap: 1rem;
+    background: white; border: 1px solid rgba(168,200,232,0.2);
+    border-radius: 16px; padding: 1.2rem 1.5rem;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.04);
+    opacity: 0; transform: translateY(20px); transition: all 0.5s ease;
+  }
+  .love-item.visible { opacity: 1; transform: translateY(0); }
+  .love-icon { font-size: 1.4rem; flex-shrink: 0; margin-top: 0.1rem; }
+  .love-text { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; color: #2a2a3e; line-height: 1.6; font-style: italic; }
+
+  .footer-section {
+    background: #0d1b2e; padding: 4rem 2rem;
+    text-align: center; position: relative; overflow: hidden;
+  }
+  .footer-section::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse 50% 60% at 50% 100%, rgba(90,143,181,0.2) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .footer-section h2 { font-family: 'Cormorant Garamond', serif; font-size: clamp(2.5rem, 8vw, 4.5rem); font-weight: 300; color: white; line-height: 1.1; position: relative; z-index: 1; margin-bottom: 1rem; }
+  .footer-section h2 em { color: var(--blue); font-style: italic; }
+  .footer-sub { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; color: rgba(168,200,232,0.5); font-style: italic; position: relative; z-index: 1; margin-bottom: 2rem; }
+  .from-sig { font-size: 0.85rem; color: rgba(168,200,232,0.35); letter-spacing: 0.1em; text-transform: uppercase; position: relative; z-index: 1; }
+
+  .confetti-container { position: fixed; inset: 0; pointer-events: none; z-index: 999; display: none; }
+  .confetti-piece {
+    position: absolute; width: 8px; height: 8px; border-radius: 2px; top: -20px;
+    animation: confettiFall var(--dur, 3s) var(--delay, 0s) ease-in forwards;
+  }
+  @keyframes confettiFall {
+    0% { transform: translateY(0) rotate(0deg) translateX(0); opacity: 1; }
+    100% { transform: translateY(110vh) rotate(720deg) translateX(var(--drift, 50px)); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="confetti-container" id="confetti"></div>
+
+<!-- QUIZ GATE -->
+<div id="quiz-gate">
+  <div class="stars" id="starsContainer"></div>
+  <div class="quiz-card">
+    <div class="quiz-header">
+      <span class="lock-icon">🔐</span>
+      <h1>Prove it, hayati.</h1>
+      <p>Answer correctly to unlock something made just for you ✨</p>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
+    <div id="questionArea">
+      <div class="question-counter" id="qCounter">Question 1 of 5</div>
+      <p class="question-text" id="qText"></p>
+      <div class="choices" id="choicesArea"></div>
+      <div class="feedback" id="feedback"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN SITE -->
+<div id="main-site">
+  <section class="hero">
+    <div class="hero-stars" id="heroStars"></div>
+    <div class="petals" id="petals"></div>
+    <div class="hero-content">
+      <p class="arabic-text">ya hayati</p>
+      <h1>Happy Birthday<br>Ashie 💙</h1>
+      <p class="hero-sub">from someone who loves you, before, now and forever</p>
+    </div>
+    <div class="scroll-hint"><span>↓ scroll ↓</span></div>
+  </section>
+
+  <section class="cat-section">
+    <div class="section-tag">a very accurate representation</div>
+    <h2 style="font-family:'Cormorant Garamond',serif;font-size:clamp(1.8rem,5vw,2.5rem);font-weight:300;margin-bottom:0.5rem">this is basically me<br>every single day</h2>
+    <p style="color:var(--soft);font-size:0.9rem;margin-bottom:1rem">screaming it into the void so you always know 🐱</p>
+    <div class="cat-frame">
+      <img id="catImg" alt="I love you cat meme" style="width:min(320px,85vw);border-radius:24px;display:block;box-shadow:0 20px 60px rgba(0,0,0,0.15);" />
+    </div>
+    <p style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:var(--soft);font-style:italic;max-width:400px;margin:0 auto">
+      "I love you!!!!" — me, always, regardless of time zone
+    </p>
+  </section>
+
+  <section class="letter-section">
+    <div class="letter-container">
+      <div style="text-align:center;margin-bottom:2rem">
+        <span class="section-tag">a letter, from the heart</span>
+        <h2 style="font-family:'Cormorant Garamond',serif;font-size:clamp(2rem,5vw,2.8rem);font-weight:300">Dear ya hayati</h2>
+      </div>
+      <div class="letter-paper">
+        <p class="letter-date">For Ashie, on her birthday 💙</p>
+        <p>Dear hayati, happiest birthday to you. I want you to know that you're the greatest person I have ever met in my life. You mean everything to me and I can't wait for the day to come when we finally meet.</p>
+        <br>
+        <p>I know that you don't like birthdays — they only bring bad memories to you. But there will be a time when those memories are nothing compared to one good memory of us together.</p>
+        <br>
+        <p>I'll always support everything you do and make sure that you feel safe and comfortable with your decisions in life.</p>
+        <br>
+        <p>I love you so much, before, now and forever.</p>
+        <div class="letter-sig">— yours always<span class="hearts-line">💙 💙 💙</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="loves-section">
+    <div class="loves-container">
+      <div class="section-header">
+        <span class="section-tag">things I love about you</span>
+        <h2>Why I fall in love with you<br>every single day</h2>
+        <p>and I could go on forever, hayati</p>
+      </div>
+      <div class="love-items" id="loveItems">
+        <div class="love-item"><span class="love-icon">🌙</span><p class="love-text">I love you when you comfort me during my toughest times.</p></div>
+        <div class="love-item"><span class="love-icon">✨</span><p class="love-text">I love you when you appreciate the little things I do.</p></div>
+        <div class="love-item"><span class="love-icon">🌸</span><p class="love-text">I love you when you get so passionate about showing me things that you love.</p></div>
+        <div class="love-item"><span class="love-icon">🫶</span><p class="love-text">I love these cute moments of you showing so much affection to me.</p></div>
+        <div class="love-item"><span class="love-icon">💬</span><p class="love-text">I love you when you talk things out to me, even when it's a sensitive topic.</p></div>
+        <div class="love-item"><span class="love-icon">🌟</span><p class="love-text">I love you when you teach me how to become an actual man.</p></div>
+        <div class="love-item"><span class="love-icon">💙</span><p class="love-text">I love every version of you. I love you when you're just you.</p></div>
+        <div class="love-item"><span class="love-icon">🌅</span><p class="love-text">You bring so much light into my life, and I can't wait to see you.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="footer-section">
+    <h2>Happy Birthday,<br><em>ya hayati.</em></h2>
+    <p class="footer-sub">from the distance, with all the love I have.</p>
+    <p class="from-sig">— Mohamed 💙</p>
+  </section>
+</div>
+
+<script>
+// ── IMAGE: load from uploaded file ──
+// Since we can't embed the image automatically, we'll use a canvas-drawn placeholder
+// that matches the meme style, then swap if a URL is available.
+// The user can drag & drop the image onto the cat section to update it.
+(function() {
+  const img = document.getElementById('catImg');
+
+  // Try to draw a placeholder using canvas that resembles the meme style
+  const canvas = document.createElement('canvas');
+  canvas.width = 320; canvas.height = 320;
+  const ctx = canvas.getContext('2d');
+
+  // Background
+  ctx.fillStyle = '#c8b89a';
+  ctx.fillRect(0, 0, 320, 320);
+
+  // Simple cat body shape
+  ctx.fillStyle = '#f0ece4';
+  ctx.beginPath();
+  ctx.ellipse(160, 200, 80, 100, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Head
+  ctx.beginPath();
+  ctx.ellipse(160, 110, 65, 70, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Open mouth
+  ctx.fillStyle = '#5a1a1a';
+  ctx.beginPath();
+  ctx.ellipse(160, 140, 40, 45, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Text
+  ctx.fillStyle = 'white';
+  ctx.font = 'bold 28px Arial Black, Arial';
+  ctx.strokeStyle = 'black';
+  ctx.lineWidth = 6;
+  ctx.strokeText('I love you!!!!', 20, 300);
+  ctx.fillText('I love you!!!!', 20, 300);
+
+  img.src = canvas.toDataURL();
+
+  // Allow drag-drop of the real image
+  const section = img.closest('section');
+  section.addEventListener('dragover', e => e.preventDefault());
+  section.addEventListener('drop', e => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = ev => { img.src = ev.target.result; };
+      reader.readAsDataURL(file);
+    }
+  });
+
+  // Also try loading from a relative path in case it's hosted
+  const tryImg = new Image();
+  tryImg.onload = () => { img.src = tryImg.src; };
+  tryImg.onerror = () => {};
+})();
+
+// ── STARS ──
+function makeStars(container, count) {
+  for (let i = 0; i < count; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    s.style.cssText = `left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${2+Math.random()*4}s;--delay:${Math.random()*4}s;--op:${0.3+Math.random()*0.7};width:${Math.random()<0.3?3:2}px;height:${Math.random()<0.3?3:2}px;`;
+    container.appendChild(s);
+  }
+}
+makeStars(document.getElementById('starsContainer'), 120);
+makeStars(document.getElementById('heroStars'), 80);
+
+// ── PETALS ──
+const petalContainer = document.getElementById('petals');
+['💙','✨','🌸','⭐'].forEach((emoji, ei) => {
+  for (let i = 0; i < 5; i++) {
+    const p = document.createElement('div');
+    p.className = 'petal';
+    p.textContent = emoji;
+    p.style.cssText = `--left:${Math.random()*100}%;--size:${0.8+Math.random()*0.8}rem;--dur:${6+Math.random()*6}s;--delay:${Math.random()*8}s;`;
+    petalContainer.appendChild(p);
+  }
+});
+
+// ── QUIZ ──
+const questions = [
+  {
+    q: "When did we confess our love to each other?",
+    choices: ["14th February 2024", "24th November 2024", "1st December 2023", "30th October 2024"],
+    answer: "24th November 2024"
+  },
+  {
+    q: "Where did we find each other?",
+    choices: ["Twitter / X", "TikTok", "Instagram", "Discord"],
+    answer: "Instagram"
+  },
+  {
+    q: "What was the first movie we watched together?",
+    choices: ["Yeh Jawaani Hai Deewani", "Ashiqui", "Zindagi Na Milegi Dobara", "Interstellar"],
+    answer: "Interstellar"
+  },
+  {
+    q: "How do we refer to each other the most?",
+    choices: ["Sayang", "Hayati", "Baby", "Darling"],
+    answer: "Baby"
+  },
+  {
+    q: "What is my full name?",
+    choices: [
+      "Mohamed bin Mohamad Isa",
+      "Muhammad bin Ahmad Isa",
+      "Mohamad bin Mohamed Ismail",
+      "Muhammad Isa bin Mohamad"
+    ],
+    answer: "Mohamed bin Mohamad Isa"
+  }
+];
+
+let current = 0;
+let locked = false;
+const qText = document.getElementById('qText');
+const qCounter = document.getElementById('qCounter');
+const choicesArea = document.getElementById('choicesArea');
+const feedback = document.getElementById('feedback');
+const progressFill = document.getElementById('progressFill');
+
+function renderQuestion() {
+  locked = false;
+  const q = questions[current];
+  qCounter.textContent = `Question ${current+1} of ${questions.length}`;
+  qText.textContent = `"${q.q}"`;
+  feedback.className = 'feedback';
+  feedback.textContent = '';
+  choicesArea.innerHTML = '';
+  q.choices.forEach(c => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.textContent = c;
+    btn.onclick = () => checkChoice(c, btn);
+    choicesArea.appendChild(btn);
+  });
+  progressFill.style.width = `${(current / questions.length) * 100}%`;
+}
+
+function checkChoice(choice, btn) {
+  if (locked) return;
+  locked = true;
+  const q = questions[current];
+  const allBtns = choicesArea.querySelectorAll('.choice-btn');
+  allBtns.forEach(b => b.disabled = true);
+
+  if (choice === q.answer) {
+    btn.classList.add('correct');
+    feedback.className = 'feedback correct';
+    feedback.textContent = '✓ That\'s right, hayati! 💙';
+    current++;
+    progressFill.style.width = `${(current / questions.length) * 100}%`;
+    if (current >= questions.length) {
+      setTimeout(revealSite, 900);
+    } else {
+      setTimeout(renderQuestion, 800);
+    }
+  } else {
+    btn.classList.add('wrong-pick');
+    // Highlight correct answer
+    allBtns.forEach(b => { if (b.textContent === q.answer) b.classList.add('correct'); });
+    feedback.className = 'feedback wrong';
+    feedback.textContent = '🤔 Hmm, are you even my girlfriend? Look closely and try again!';
+    setTimeout(() => {
+      allBtns.forEach(b => { b.classList.remove('correct','wrong-pick'); b.disabled = false; });
+      feedback.className = 'feedback';
+      locked = false;
+    }, 1800);
+  }
+}
+
+function revealSite() {
+  const gate = document.getElementById('quiz-gate');
+  gate.style.transition = 'opacity 1s ease';
+  gate.style.opacity = '0';
+  setTimeout(() => {
+    gate.style.display = 'none';
+    const site = document.getElementById('main-site');
+    site.style.display = 'block';
+    setTimeout(() => site.classList.add('visible'), 50);
+    launchConfetti();
+    setTimeout(startLoveObserver, 1200);
+  }, 1000);
+}
+
+function launchConfetti() {
+  const c = document.getElementById('confetti');
+  c.style.display = 'block';
+  const colors = ['#a8c8e8','#5a8fb5','#d6eaf8','#ffffff','#90c0e0'];
+  for (let i = 0; i < 80; i++) {
+    const p = document.createElement('div');
+    p.className = 'confetti-piece';
+    p.style.cssText = `background:${colors[Math.floor(Math.random()*colors.length)]};left:${Math.random()*100}%;--dur:${2+Math.random()*2}s;--delay:${Math.random()*1.5}s;--drift:${(Math.random()-0.5)*200}px;border-radius:${Math.random()<0.5?'50%':'2px'};`;
+    c.appendChild(p);
+  }
+  setTimeout(() => c.style.display = 'none', 6000);
+}
+
+function startLoveObserver() {
+  const items = document.querySelectorAll('.love-item');
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) setTimeout(() => entry.target.classList.add('visible'), i * 100);
+    });
+  }, { threshold: 0.2 });
+  items.forEach(item => observer.observe(item));
+}
+
+renderQuestion();
+</script>
+</body>
+</html>
